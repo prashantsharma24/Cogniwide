@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">TestCogniwide</string>
+    <string name="enter_email_address">Enter Email Address</string>
+    <string name="enter_password">Enter Password</string>
+    <string name="login">Login</string>
+    <string name="movie_image">Movie Image</string>
+</resources>
