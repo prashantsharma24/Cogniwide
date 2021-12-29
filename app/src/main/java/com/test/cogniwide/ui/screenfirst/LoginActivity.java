@@ -1,80 +1,79 @@
 package com.test.cogniwide.ui.screenfirst;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Patterns;
-import android.view.View;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProviders;
 
 import com.test.cogniwide.R;
+import com.test.cogniwide.data.model.LoginScreenModel;
 import com.test.cogniwide.databinding.ActivityLoginBinding;
 import com.test.cogniwide.ui.screensecond.MovieListActivity;
-
-import java.util.Objects;
+import com.test.cogniwide.viewmodels.LoginViewModel;
 
 public class LoginActivity extends AppCompatActivity {
 
+    private static final String TAG = LoginActivity.class.getSimpleName();
     ActivityLoginBinding activityLoginBinding;
-    Activity mActivity;
-    Context mContext;
+    private LoginViewModel mLoginViewModel;
+    boolean isEmailCorrect, isPasswordCorrect = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mActivity = LoginActivity.this;
-        mContext = LoginActivity.this;
-
+        mLoginViewModel = ViewModelProviders.of(this).get(LoginViewModel.class);
         activityLoginBinding = DataBindingUtil.setContentView(this, R.layout.activity_login);
+        activityLoginBinding.setLoginModel(mLoginViewModel);
+        activityLoginBinding.btnLogin.setEnabled(false);
 
-        activityLoginBinding.btnLogin.setOnClickListener(new View.OnClickListener() {
+        mLoginViewModel.getEmailAddress().observe(this, new Observer<String>() {
             @Override
-            public void onClick(View view) {
-                if (validateForm()) {
-                    Intent movieListIntent = MovieListActivity.startIntent(mContext);
-                    startActivity(movieListIntent);
-                    finish();
+            public void onChanged(String s) {
+                if (!s.isEmpty() && Patterns.EMAIL_ADDRESS.matcher(s).matches()) {
+                    isEmailCorrect = true;
+                    setEnableLoginButton();
+                } else {
+                    isEmailCorrect = false;
+                    activityLoginBinding.btnLogin.setBackgroundColor(getResources().getColor(R.color.darker_gray));
                 }
+            }
+        });
+
+        mLoginViewModel.getPassword().observe(this, new Observer<String>() {
+            @Override
+            public void onChanged(String s) {
+                if (!s.isEmpty() && s.length() > 5 && s.length() <= 12) {
+                    isPasswordCorrect = true;
+                    setEnableLoginButton();
+                } else {
+                    isPasswordCorrect = false;
+                    activityLoginBinding.btnLogin.setBackgroundColor(getResources().getColor(R.color.darker_gray));
+                }
+            }
+        });
+
+        mLoginViewModel.getLoginData().observe(this, new Observer<LoginScreenModel>() {
+            @Override
+            public void onChanged(LoginScreenModel loginModel) {
+                Intent intent = new Intent(getApplicationContext(), MovieListActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
             }
         });
 
 
     }
 
-    private boolean validateForm() {
-        if (getEmail().isEmpty()) {
-            Toast.makeText(this, "Enter email address !", Toast.LENGTH_SHORT).show();
-            return false;
+    private void setEnableLoginButton() {
+        activityLoginBinding.btnLogin.setEnabled(isEmailCorrect && isPasswordCorrect);
+        if (isEmailCorrect && isPasswordCorrect) {
+            activityLoginBinding.btnLogin.setBackgroundColor(getResources().getColor(R.color.purple_500));
         }
 
-        if (!Patterns.EMAIL_ADDRESS.matcher(getEmail()).matches()) {
-            Toast.makeText(this, "Enter a valid email address !", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-
-        if (getPassword().isEmpty()) {
-            Toast.makeText(this, "Enter password !", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-
-        if (!(getPassword().length() > 5 && getPassword().length() <= 12)) {
-            Toast.makeText(this, "Password length should be between 6 - 12 characters.", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-
-        return true;
-    }
-
-    private String getEmail() {
-        return Objects.requireNonNull(activityLoginBinding.etEmail.getText()).toString();
-    }
-
-    private String getPassword() {
-        return Objects.requireNonNull(activityLoginBinding.etPassword.getText()).toString();
     }
 }

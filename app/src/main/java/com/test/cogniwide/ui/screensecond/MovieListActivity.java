@@ -1,116 +1,56 @@
 package com.test.cogniwide.ui.screensecond;
 
-import android.app.Activity;
-import android.app.ProgressDialog;
-import android.content.Context;
-import android.content.Intent;
-import android.graphics.Movie;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.databinding.DataBindingUtil;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProviders;
 
-import com.facebook.shimmer.Shimmer;
-import com.facebook.shimmer.ShimmerFrameLayout;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.test.cogniwide.R;
+import com.test.cogniwide.data.model.MovieListDetailResponseModel;
+import com.test.cogniwide.databinding.ActivityMovieListBinding;
 import com.test.cogniwide.ui.screensecond.adapters.MovieListAdapter;
 import com.test.cogniwide.utils.CommonUtils;
+import com.test.cogniwide.viewmodels.MovieListViewModel;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
+import java.util.List;
 
 public class MovieListActivity extends AppCompatActivity {
 
-    Activity mActivity;
-    Context mContext;
-    RecyclerView rvMovies;
-    MovieListAdapter movieListAdapter;
-
-    ArrayList<MovieListResultModel> movieListResultModelArrayList = new ArrayList<>();
-
-    MovieViewModel movieViewModel;
+    ActivityMovieListBinding mMovieListBinding;
+    MovieListViewModel movieListViewModel;
     CommonUtils commonUtils;
-
-    ShimmerFrameLayout movieListShimmerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_movie_list);
-
-        mActivity = MovieListActivity.this;
-        mContext = MovieListActivity.this;
-
-        movieViewModel = new ViewModelProvider(this).get(MovieViewModel.class);
-
-        initialise();
-
-        callAPI();
-    }
-
-    public static Intent startIntent(Context mContext) {
-        Intent movieListActivity = new Intent(mContext, MovieListActivity.class);
-        return movieListActivity;
-    }
-
-    private void initialise() {
         commonUtils = new CommonUtils();
-        rvMovies = findViewById(R.id.rvMovieList);
-        movieListShimmerView = findViewById(R.id.shimmer_view_movie_list);
-    }
 
-    private void callAPI() {
-        movieListShimmerView.setVisibility(View.VISIBLE);
-        movieListShimmerView.startShimmer();
-        if (commonUtils.isConnected(mContext)) {
-            movieListShimmerView.setVisibility(View.VISIBLE);
-            movieListShimmerView.startShimmer();
-            movieViewModel.getMovieData().observe(this, movieModel ->
-            {
-                Gson gson = new GsonBuilder().create();
+        mMovieListBinding = DataBindingUtil.setContentView(this, R.layout.activity_movie_list);
+        movieListViewModel = ViewModelProviders.of(this).get(MovieListViewModel.class);
+        mMovieListBinding.shimmerViewMovieList.setVisibility(View.VISIBLE);
+        mMovieListBinding.shimmerViewMovieList.startShimmer();
+        if (commonUtils.isConnected(this)) {
+            mMovieListBinding.shimmerViewMovieList.setVisibility(View.VISIBLE);
+            mMovieListBinding.shimmerViewMovieList.startShimmer();
+            movieListViewModel.getMovieListRepository().observe(this, new Observer<List<MovieListDetailResponseModel>>() {
+                @Override
+                public void onChanged(List<MovieListDetailResponseModel> movieList) {
+                    MovieListAdapter movieListAdapter = new MovieListAdapter(getApplicationContext(), movieList);
+                    mMovieListBinding.rvMovieList.setAdapter(movieListAdapter);
+                    mMovieListBinding.shimmerViewMovieList.stopShimmer();
+                    mMovieListBinding.shimmerViewMovieList.setVisibility(View.GONE);
 
-                String response = gson.toJson(movieModel, MovieListModel.class);
-
-                try {
-                    JSONObject jsonResponseObject = new JSONObject(response);
-                    JSONArray resultsArray = jsonResponseObject.getJSONArray("results");
-
-                    for (int i = 0; i < resultsArray.length(); i++) {
-                        JSONObject resultJsonObject = resultsArray.getJSONObject(i);
-                        MovieListResultModel movieListResultModel = new MovieListResultModel();
-                        movieListResultModel.setTitle(resultJsonObject.optString("title", ""));
-                        movieListResultModel.setPosterPath(resultJsonObject.optString("poster_path", ""));
-                        movieListResultModelArrayList.add(movieListResultModel);
-                    }
-
-                    movieListShimmerView.stopShimmer();
-                    movieListShimmerView.setVisibility(View.GONE);
-                    movieListAdapter = new MovieListAdapter(this, movieListResultModelArrayList);
-                    rvMovies.setAdapter(movieListAdapter);
-
-                } catch (JSONException e) {
-                    movieListShimmerView.stopShimmer();
-                    movieListShimmerView.setVisibility(View.GONE);
-                    e.printStackTrace();
                 }
-
-
             });
         } else {
-            Toast.makeText(mActivity, "Oops ! No internet connection !", Toast.LENGTH_SHORT).show();
-            movieListShimmerView.stopShimmer();
-            movieListShimmerView.setVisibility(View.GONE);
+            Toast.makeText(this, "Oops ! No internet connection !", Toast.LENGTH_SHORT).show();
+            mMovieListBinding.shimmerViewMovieList.stopShimmer();
+            mMovieListBinding.shimmerViewMovieList.setVisibility(View.GONE);
         }
+
     }
 }

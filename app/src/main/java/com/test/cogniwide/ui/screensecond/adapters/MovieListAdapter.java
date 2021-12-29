@@ -3,49 +3,42 @@ package com.test.cogniwide.ui.screensecond.adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
-import com.test.cogniwide.BuildConfig;
-import com.test.cogniwide.R;
-import com.test.cogniwide.ui.screensecond.MovieListResultModel;
+import com.test.cogniwide.data.model.MovieListDetailResponseModel;
+import com.test.cogniwide.databinding.RvMoviesListBinding;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class MovieListAdapter extends RecyclerView.Adapter<MovieListAdapter.MyViewHolder> {
 
-    private ArrayList<MovieListResultModel> movieListResultList;
+    private List<MovieListDetailResponseModel> movieListResultList;
     private Context mContext;
 
-    public MovieListAdapter(Context mContext, ArrayList<MovieListResultModel> movieListResultList) {
+    public MovieListAdapter(Context mContext, List<MovieListDetailResponseModel> movieListResultList) {
         this.movieListResultList = movieListResultList;
         this.mContext = mContext;
     }
 
     @Override
     public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
+        RvMoviesListBinding productRowBinding = RvMoviesListBinding.inflate(layoutInflater, parent, false);
 
-        View itemView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.rv_movies_list, parent, false);
-
-        return new MyViewHolder(itemView);
+        return new MyViewHolder(productRowBinding);
     }
 
     @Override
     public void onBindViewHolder(MyViewHolder holder, int position) {
 
-        MovieListResultModel moviePojo = movieListResultList.get(position);
+        final MovieListDetailResponseModel moviePojo = movieListResultList.get(position);
 
-        holder.tv_movie_name.setText(moviePojo.getTitle());
+        holder.rvMoviesListBinding.setMovieListModel(moviePojo);
+        holder.rvMoviesListBinding.executePendingBindings();
 
-        Glide.with(mContext)
-                .load(BuildConfig.IMG_URL + moviePojo.getPosterPath())
-                .into(holder.iv_movie);
     }
 
     @Override
@@ -54,13 +47,12 @@ public class MovieListAdapter extends RecyclerView.Adapter<MovieListAdapter.MyVi
     }
 
     public class MyViewHolder extends RecyclerView.ViewHolder {
-        public TextView tv_movie_name;
-        public ImageView iv_movie;
 
-        public MyViewHolder(View view) {
-            super(view);
-            tv_movie_name = view.findViewById(R.id.tv_movie_name);
-            iv_movie = view.findViewById(R.id.iv_movie);
+        RvMoviesListBinding rvMoviesListBinding;
+
+        public MyViewHolder(@NonNull RvMoviesListBinding rvMoviesListBinding) {
+            super(rvMoviesListBinding.getRoot());
+            this.rvMoviesListBinding = rvMoviesListBinding;
         }
     }
 }
